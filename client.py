@@ -1,30 +1,23 @@
 import socket
 
-# client
-def run_client(server_ip="127.0.0.1", port_number=8000):
-
+def run_client(server_ip = '127.0.0.1',server_port = 8000):
+    
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client.connect((server_ip, server_port))
+        print(f"[C] Connected to server at {server_ip}:{server_port}")
+        while True:
+            message = input("Enter message to send: ")
+            client.send(message.encode('utf-8'))
+            if message == 'close':
+                break
+            response = client.recv(1024).decode('utf-8')
+            print(f"[C] Received from server: {response}")
+    except Exception as e:
+        print(f"[C] Error when running client: {e}")
+    finally:
+        client.close()
+        print("[C] Connection closed")
 
-    #server ip and port
-    server_port = port_number
-
-    #establish connection
-    client.connect((server_ip, server_port))
-
-    while True:
-        #send message
-        message = input("Enter your message: ")
-        client.send(message.encode("utf-8")[:1024])
-
-        #receive message
-        response = client.recv(1024)
-        response = response.decode("utf-8")
-        print("Received from server: ", response)
-
-        if response.lower() == "close":
-            break
-
-    client.close()
-    print("Connection to Server Closed")
-
-run_client()
+if __name__ == '__main__':
+    run_client()
