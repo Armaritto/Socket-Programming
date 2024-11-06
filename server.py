@@ -3,6 +3,7 @@ import os
 import threading
 import sys
 
+
 def handle_client_connection(client_socket):
     while True:
         request = client_socket.recv(2048).decode('utf-8')
@@ -13,7 +14,8 @@ def handle_client_connection(client_socket):
         headers = request.split('\r\n')
         command_line = headers[0]
         command = command_line.split(' ')[0]
-        file_path = command_line.split(' ')[1].lstrip('/')
+        file_path = command_line.split(' ')[1]
+
 
         file_type = file_path.split('.')[-1]
         if file_type == 'txt':
@@ -27,14 +29,23 @@ def handle_client_connection(client_socket):
             if os.path.isfile(file_path):
                 if file_type == 'text/plain':
                     with open(file_path, 'r') as f:
+                        print(f"[*] Reading file {file_path}")
                         file_data = f.read().encode('utf-8')
+                        print(f"[*] Finished reading file {file_path}")
                 else:
                     with open(file_path, 'rb') as f:
+                        print(f"[*] Reading file {file_path}")
                         file_data = f.read()
-                response = f'HTTP/1.1 200 OK\r\nContent-Type: {file_type}\r\nContent-Length: {len(file_data)}\r\n\r\n'.encode('utf-8') + file_data
+                        print(f"[*] Finished reading file {file_path}")
+                print(f"[*] Sending file {file_path}")
+                response = f'HTTP/1.1 200 OK\r\nContent-Type: {file_type}\r\nContent-Length: {len(file_data)}\r\n\r\n'.encode(
+                    'utf-8') + file_data
+                print(f"[*] Finished sending file {file_path}")
             else:
                 response = 'HTTP/1.1 404 Not Found\r\n\r\n'.encode('utf-8')
+            print(f"[*] Sending response:\n{response.decode('utf-8')}")
             client_socket.send(response)
+            print(f"[*] Finished sending response")
 
         elif command == 'POST':
             content_length = 0
@@ -51,6 +62,7 @@ def handle_client_connection(client_socket):
 
     client_socket.close()
 
+
 def start_server(port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(('0.0.0.0', port))
@@ -62,6 +74,7 @@ def start_server(port):
         print(f"[*] Accepted connection from {addr}")
         client_handler = threading.Thread(target=handle_client_connection, args=(client_socket,))
         client_handler.start()
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

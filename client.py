@@ -4,7 +4,7 @@ import sys
 
 
 def send_get_request(file_path_on_server, host_name):
-    return f"GET /{file_path_on_server} {host_name}\r\n".encode('utf-8')
+    return f"GET {file_path_on_server} {host_name}\r\n".encode('utf-8')
 
 
 def send_post_request(file_path_on_client, host_name):
@@ -35,17 +35,27 @@ def run_client(server_ip, server_port):
             client.send(request)
 
             # Receive the file data from server and save it
-            response = client.recv(1024)
-            if b'404 Not Found' in response:
+            response = client.recv(2048).decode('utf-8')
+            print(f"[C] Received response: {response}")
+            if '404 Not Found' in response:
                 print("[C] File not found on server.")
 
             else:
                 # Save the file content
-                with open(os.path.basename(file_path), 'wb') as f:
-                    while response:
+                file_name = os.path.basename(file_path)
+
+                # Separate headers from the body
+                header_end = response.find('\r\n\r\n') + 4
+                body = response[header_end:]
+
+                with open(file_name, 'w') as f:
+                    f.write(body)
+                    while True:
+                        response = client.recv(2048)
+                        if not response:
+                            break
                         f.write(response)
-                        response = client.recv(1024)
-                print(f"[C] File '{file_path}' received and saved.")
+                print(f"[C] File '{file_name}' received and saved.")
 
         elif command_type == 'client_post':
             # Ensure the file exists locally
