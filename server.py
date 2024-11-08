@@ -53,7 +53,21 @@ def handle_client_connection(client_socket):
                     content_length = int(header.split(' ')[1])
                     break
 
-            file_data = client_socket.recv(content_length)
+            if content_length == 0:
+                print("[*] Received an empty file.")
+                response = 'HTTP/1.1 200 OK\r\n\r\n'.encode('utf-8')
+                client_socket.send(response)
+                continue
+
+            file_data = b''
+            while len(file_data) < content_length:
+                packet = client_socket.recv(2048)
+                if not packet:
+                    break
+                file_data += packet
+
+            file_name = file_path.split('/')[-1]
+            file_path = os.path.dirname(__file__) + '/' + file_name
             with open(file_path, 'wb') as f:
                 f.write(file_data)
             response = 'HTTP/1.1 200 OK\r\n\r\n'.encode('utf-8')
@@ -77,7 +91,7 @@ def start_server(port):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        port = 80
+        port = 8080
     else:
         port = int(sys.argv[1])
     start_server(port)

@@ -6,10 +6,9 @@ import sys
 def send_get_request(file_path_on_server, host_name):
     return f"GET {file_path_on_server} {host_name}\r\n".encode('utf-8')
 
-
 def send_post_request(file_path_on_client, host_name):
-    return f"POST /{file_path_on_client} {host_name}\r\n".encode('utf-8')
-
+    content_length = os.path.getsize(file_path_on_client)
+    return f"POST /{file_path_on_client} {host_name}\r\nContent-Length: {content_length}\r\n\r\n".encode('utf-8')
 
 def run_client(server_ip, server_port):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -78,13 +77,28 @@ def run_client(server_ip, server_port):
                 print(f"[C] File '{file_path}' not found locally.")
                 continue
 
+            content_length = os.path.getsize(file_path)
             request = send_post_request(file_path, server_ip)
             client.send(request)
 
+            if content_length == 0:
+                print(f"[C] File '{file_path}' is empty.")
+                response = client.recv(2048)
+                if b'200 OK' in response:
+                    print(f"[C] File '{file_path}' uploaded to server.")
+                else:
+                    print(f"[C] Failed to upload file '{file_path}' to server.")
+                continue
+
             with open(file_path, 'rb') as f:
-                while file_data := f.read(1024):
+                while file_data := f.read(4096):
                     client.send(file_data)
-            print(f"[C] File '{file_path}' uploaded to server.")
+
+            response = client.recv(2048)
+            if b'200 OK' in response:
+                print(f"[C] File '{file_path}' uploaded to server.")
+            else:
+                print(f"[C] Failed to upload file '{file_path}' to server.")
 
     client.close()
     print("[C] Connection closed")
