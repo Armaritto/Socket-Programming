@@ -23,7 +23,7 @@ def run_client(server_ip, server_port):
         print(f"[C] Server assigned timeout: {timeout} seconds")
     else:
         print("[C] No timeout received from server.")
-        timeout = 60  # Default timeout if not provided
+        timeout = 180  # Default timeout if not provided
 
     last_activity = time.time()
 
@@ -53,6 +53,7 @@ def run_client(server_ip, server_port):
                 response = client.recv(2048)
                 print(f"[C] Received response from server")
                 if b'404 Not Found' in response:
+                    print("[S] HTTP/1.1 404 Not Found\r\n")
                     print("[C] File not found on server.")
 
 
@@ -74,7 +75,7 @@ def run_client(server_ip, server_port):
                         print("[C] Content-Length header not found.")
                         continue
 
-                    if content_type == b'text/plain':
+                    if content_type == b'text':
                         with open(file_name, 'w') as f:
                             f.write(body.decode('utf-8'))
                     else:
@@ -87,6 +88,7 @@ def run_client(server_ip, server_port):
                                     break
                                 f.write(response)
                                 bytes_received += len(response)
+                    print("[S] HTTP/1.1 200 OK\r\n")
                     print(f"[C] File '{file_name}' received and saved.")
 
             elif command_type == 'client_post':
@@ -102,6 +104,7 @@ def run_client(server_ip, server_port):
                     print(f"[C] File '{file_path}' is empty.")
                     response = client.recv(2048)
                     if b'200 OK' in response:
+                        print("[S] HTTP/1.1 200 OK\r\n")
                         print(f"[C] File '{file_path}' uploaded to server.")
                     else:
                         print(f"[C] Failed to upload file '{file_path}' to server.")
@@ -113,11 +116,11 @@ def run_client(server_ip, server_port):
 
                 response = client.recv(2048)
                 if b'200 OK' in response:
+                    print("[S] HTTP/1.1 200 OK\r\n")
                     print(f"[C] File '{file_path}' uploaded to server.")
                 else:
                     print(f"[C] Failed to upload file '{file_path}' to server.")
 
-                print(f"[C] Received response:\n{response.decode('utf-8')}")
                 last_activity = time.time()  # Update last activity time after each successful request
 
         except ConnectionAbortedError:
