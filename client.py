@@ -34,7 +34,6 @@ def run_client(server_ip, server_port):
             request = send_get_request(file_path, server_ip) #file path on server
             client.send(request)
 
-            # Receive the file data from server and save it
             response = client.recv(2048)
             print(f"[C] Received response from server")
             if b'404 Not Found' in response:
@@ -42,35 +41,39 @@ def run_client(server_ip, server_port):
 
 
             else:
-                # Save the file content
                 file_name = os.path.basename(file_path)
 
-                # Separate headers from the body
                 header_end = response.find(b'\r\n\r\n') + 4
                 headers = response[:header_end]
                 body = response[header_end:]
-
-                # Determine the file type from headers
+                content_length = None
                 content_type = None
                 for header in headers.split(b'\r\n'):
+                    if header.startswith(b'Content-Length: '):
+                        content_length = int(header.split(b' ')[1])
                     if header.startswith(b'Content-Type: '):
                         content_type = header.split(b' ')[1]
-                        break
+
+                if content_length is None:
+                    print("[C] Content-Length header not found.")
+                    continue
+
                 if content_type == b'text/plain':
                     with open(file_name, 'w') as f:
                         f.write(body.decode('utf-8'))
                 else:
                     with open(file_name, 'wb') as f:
                         f.write(body)
-                        while True:
+                        bytes_received = len(body)
+                        while bytes_received < content_length:
                             response = client.recv(2048)
                             if not response:
                                 break
                             f.write(response)
+                            bytes_received += len(response)
                 print(f"[C] File '{file_name}' received and saved.")
 
         elif command_type == 'client_post':
-            # Ensure the file exists locally
             if not os.path.isfile(file_path):
                 print(f"[C] File '{file_path}' not found locally.")
                 continue
@@ -78,9 +81,8 @@ def run_client(server_ip, server_port):
             request = send_post_request(file_path, server_ip)
             client.send(request)
 
-            # Read file data and send to server
             with open(file_path, 'rb') as f:
-                while (file_data := f.read(1024)):
+                while file_data := f.read(1024):
                     client.send(file_data)
             print(f"[C] File '{file_path}' uploaded to server.")
 
