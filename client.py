@@ -17,7 +17,7 @@ def run_client(server_ip, server_port):
 
 
     # Receive timeout value from server
-    timeout_message = client.recv(1024).decode('utf-8')
+    timeout_message = client.recv(1024).dcode('utf-8')
     if "Timeout" in timeout_message:
         timeout = float(timeout_message.split(": ")[1])
         print(f"[C] Server assigned timeout: {timeout} seconds")
