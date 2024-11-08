@@ -35,26 +35,38 @@ def run_client(server_ip, server_port):
             client.send(request)
 
             # Receive the file data from server and save it
-            response = client.recv(2048).decode('utf-8')
-            print(f"[C] Received response: {response}")
-            if '404 Not Found' in response:
+            response = client.recv(2048)
+            print(f"[C] Received response from server")
+            if b'404 Not Found' in response:
                 print("[C] File not found on server.")
+
 
             else:
                 # Save the file content
                 file_name = os.path.basename(file_path)
 
                 # Separate headers from the body
-                header_end = response.find('\r\n\r\n') + 4
+                header_end = response.find(b'\r\n\r\n') + 4
+                headers = response[:header_end]
                 body = response[header_end:]
 
-                with open(file_name, 'w') as f:
-                    f.write(body)
-                    while True:
-                        response = client.recv(2048)
-                        if not response:
-                            break
-                        f.write(response)
+                # Determine the file type from headers
+                content_type = None
+                for header in headers.split(b'\r\n'):
+                    if header.startswith(b'Content-Type: '):
+                        content_type = header.split(b' ')[1]
+                        break
+                if content_type == b'text/plain':
+                    with open(file_name, 'w') as f:
+                        f.write(body.decode('utf-8'))
+                else:
+                    with open(file_name, 'wb') as f:
+                        f.write(body)
+                        while True:
+                            response = client.recv(2048)
+                            if not response:
+                                break
+                            f.write(response)
                 print(f"[C] File '{file_name}' received and saved.")
 
         elif command_type == 'client_post':

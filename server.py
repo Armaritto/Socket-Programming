@@ -43,7 +43,6 @@ def handle_client_connection(client_socket):
                 print(f"[*] Finished sending file {file_path}")
             else:
                 response = 'HTTP/1.1 404 Not Found\r\n\r\n'.encode('utf-8')
-            print(f"[*] Sending response:\n{response.decode('utf-8')}")
             client_socket.send(response)
             print(f"[*] Finished sending response")
 
