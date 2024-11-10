@@ -10,10 +10,10 @@ lock = threading.Lock()  # To safely update the connection count
 
 def calculate_timeout():
     """ Calculate timeout based on the number of active connections """
-    base_timeout = 180  # seconds
+    base_timeout = 1800  # seconds
     with lock:
         t = base_timeout / (1 + active_connections)
-    return max(t, 5)  # Ensure minimum timeout of 5 seconds
+    return max(t, 30)  # Ensure minimum timeout of 5 seconds
 
 
 def handle_client_connection(client_socket):
